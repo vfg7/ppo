@@ -1,8 +1,10 @@
 from chain_nodes import *
 from materials import *
-# from model import *
-# from policy import *
+from model import *
+from policy import *
 from uncertainties import *
+import matplotlib.pyplot as plt
+import numpy as np
 
 #parameters
 q = 8
@@ -24,6 +26,11 @@ demand_max = 500
 demand_min = 0
 leadtime_max = 4
 timesteps = 360
+demand_mean = 200
+freq = 0.1
+
+state_size = 27
+action_size = 14
 
 def create_chain(q):
 
@@ -50,26 +57,74 @@ def create_chain(q):
     
     return chain
 
-def simulate_chain(chain, timesteps):
+def simulate_chain(chain, max_time):
     #gerar condições iniciais, incluindo os estocásticos
-    
-    for epochs in range(timesteps):
+    p = random.randint(0,60)
+
+    demand = stochastic_demand(demand_min, demand_max, freq, 0, max_time, demand_mean, p)
+    states = generate_random_states(1)
+    cost_history =[]
+    max_cost = 0
+    # Build initial models
+    policy_model = build_ppo2_model(state_size, action_size)
+    value_model = build_ppo2_model(state_size, action_size)
+
+    for epoch in range(max_time):
         # run chain and calculate state
+        chain = set_state(chain, states[-1])
         # evaluate state of chain 
+        cost = operating_cost(chain)
+        cost_history.append(cost)
+
         # apply policy, take action 
+        action, policy_model, value_model = execute_policy(policy_model, value_model, chain, states[-1], 100)
+
         # update parameters
+        timesteps = max_time - epoch
+        p = random.randint(0,60)
+        demand = stochastic_demand(min=demand_min, max=demand_max, z=freq,t=epoch,total_timesteps=max_time,mean=demand_mean, std=p)
+        new_state = execute_action(action, demand, timesteps, chain)
+        states.append(new_state)
         #guarda e imprime estado da cadeia, resultado da atuação do agente
-        #
-        break
+    
+    return cost_history
 
+def evaluate_results(timeseries):
 
-    return True
+    print("Historical Performance Values:")
+    print(timeseries)
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(timeseries, label='Performance Over Time', marker='o')
+    plt.title('Historical Performance Over Time')
+    plt.xlabel('Time')
+    plt.ylabel('Performance Value')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+    initial_value = timeseries[0]
+    max_value = np.max(timeseries)
+    min_value = np.min(timeseries)
+    std_value = np.std(timeseries)
+    mean_value = np.mean(timeseries)
+    below_mean_percentage = np.mean(np.array(timeseries) < mean_value) * 100
+
+    print("\nStatistics:")
+    print(f"Initial Value: {initial_value}")
+    print(f"Max Value: {max_value}")
+    print(f"Min Value: {min_value}")
+    print(f"Standard Deviation: {std_value}")
+    print(f"Mean Value: {mean_value}")
+    print(f"Percentage of Values Below Mean: {below_mean_percentage}%")
+
 
 #test
 def main():
 
     a = create_chain(2)
-    simulate_chain(a)
+    timeseries = simulate_chain(a, 360)
+    evaluate_results(timeseries)
 
 if __name__ == "__main__":
     main()

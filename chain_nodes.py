@@ -15,7 +15,7 @@ class Chain_Node:
         self.production_ratio = production_ratio #capacidade do nó (produtiva) por timestep 
         # ou capacidade de processamento
         self.ins = 0
-        self.forecast_ins = 0
+        self.future_ins = 0
 
         self.logistic_cost = logistic_cost
         self.logistic_ratio = logistic_ratio
@@ -46,7 +46,7 @@ class Chain_Node:
         my_dict['production_ratio']  =  self.production_ratio #capacidade do nó (produtiva) por timestep 
             # ou capacidade de processamento
         my_dict['ins'] = self.ins 
-        my_dict['forecast_ins'] = self.forecast_ins 
+        my_dict['forecast_ins'] = self.future_ins 
 
         my_dict['logistic_cost'] = self.logistic_cost 
         my_dict['logistic_ratio'] = self.logistic_ratio 
@@ -188,14 +188,13 @@ class Chain_Node:
             self.current_stock = self.current_stock + mats.amount_on_node
 
 
-    def supply_chain_manager(self, supply_future = None, supply_now = None, demand_one = None, 
+    def update_state(self, supply_future = None, demand_one = None, 
                              id_one = None, demand_two = None, id_two = None):
         #what happens in this time step, stays in this timestep... or not
         #imaginando o timestep como um intervalo contínuo (tipo, um dia)
         #por padrão, toda produção começa no timestep e toda entrega começa no final do timestep 
         # (a ser entregue para o próximo nó no começo do timestep seguinte. Isto é, vira o supply do outro)
-        self.forecast_ins = self.produce(supply_future) #foi produzido neste timestep
-        self.ins = self.produce(supply_now) #foi produzido neste timestep
+        self.future_ins = self.produce(supply_future) #foi produzido neste timestep
 
         delivery_hierarchy = self.hierarchy + 1
         one = self.deliver(demand_one) #será entregue para o nó seguinte no próximo timestep

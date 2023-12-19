@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 
 #generate stochastic values for experimental scenarios
 
-def stochastic_demand(min, max, z, t, total_timesteps, p):
+def stochastic_demand(min, max, freq, t, total_timesteps, mean, std):
 
-    s = sinusoidal(min, max, z, total_timesteps,t)
-    d = disturbance(0, p)
-    print(s,p)
+    s = sinusoidal(min, max, freq, total_timesteps,t)
+    d = disturbance(mean, std)
+    print(s,d)
 
     return clip(s+d,max,min)
 
@@ -23,19 +23,12 @@ def clip(x, max, min):
     else: 
         return x
 
-def sinusoidal(min, max, z, total_timesteps, given_timestep=None):
+def sinusoidal(min, max, freq, total_timesteps, given_timestep=None):
 
-    print(given_timestep)
-    if given_timestep:
-        return min + (max-min)/2 * (1+math.sin(2*z*given_timestep*math.pi/total_timesteps))
+    if given_timestep==0:
+        given_timestep =1
     
-    else:
-        stochastics = []
-        for t in range(total_timesteps):
-            s = min + (max-min)/2 * (1+math.sin(2*z*t*math.pi/total_timesteps))
-            stochastics.append(s)
-            #what do i return? and what about z?
-        return stochastics
+    return min + (max-min)/2 * (1+math.sin(2*freq*given_timestep*math.pi/total_timesteps))
 
 
 def disturbance(mean, std_dev):
@@ -66,14 +59,13 @@ def normalize_to_zero_one(value, min_val, max_val):
     
     return normalized_value
 
-
 #test
 def main():
     # print(disturbance(3,4))
-    min, max, z, t, total_timesteps, p = 100,400,6,60,360,60
-    a = uniform_demand(min,max)
-    print(a)
-    a = stochastic_demand(min, max, z,t, total_timesteps, p)
+    min, max, z, t, total_timesteps, p = 100,400,0.1,1,360,60
+    # a = uniform_demand(min,max)
+    # print(a)
+    a = stochastic_demand(min, max, z,t, total_timesteps, 200, p)
     print(a)
 
 if __name__ == "__main__":
