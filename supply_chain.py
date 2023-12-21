@@ -49,7 +49,7 @@ def create_chain(q):
             prod_c = process_cost
             prod = proc_cap
 
-        node = Chain_Node(id=q, stock_capacity=stock*p, stock_cost=stock_cost,
+        node = Chain_Node(id=q%2, stock_capacity=stock*p, stock_cost=stock_cost,
                           logistic_ratio=log_cap, logistic_cost=transport_cost,penalty_cost=penalty_cost_demand,
                           production_ratio=prod*p, production_cost=prod_c*p, h = x//2)
         node.print()
@@ -62,9 +62,9 @@ def simulate_chain(chain, max_time):
     p = random.randint(0,60)
 
     demand = stochastic_demand(demand_min, demand_max, freq, 0, max_time, demand_mean, p)
-    states = generate_random_states(1)
+    states, n_states = generate_random_states(1, normalized=True)
+
     cost_history =[]
-    max_cost = 0
     # Build initial models
     policy_model = build_ppo2_model(state_size, action_size)
     value_model = build_ppo2_model(state_size, action_size)
@@ -77,14 +77,20 @@ def simulate_chain(chain, max_time):
         cost_history.append(cost)
 
         # apply policy, take action 
-        action, policy_model, value_model = execute_policy(policy_model, value_model, chain, states[-1], 100)
+        print(cost, 'go to policy')
+        action, policy_model, value_model = execute_policy(policy_model, value_model, chain, states[-1],n_states[-1], 100)
 
         # update parameters
         timesteps = max_time - epoch
         p = random.randint(0,60)
-        demand = stochastic_demand(min=demand_min, max=demand_max, z=freq,t=epoch,total_timesteps=max_time,mean=demand_mean, std=p)
-        new_state = execute_action(action, demand, timesteps, chain)
+        demand =[stochastic_demand(min=demand_min, max=demand_max, freq=freq,t=epoch,total_timesteps=max_time,mean=demand_mean, std=p)
+                 for x in range(2)]
+        print(demand)
+        updated_chain = execute_action(action, timesteps, chain)
+        new_state, new_state_n = calculate_state(updated_chain, epoch, demand, True)
+        print('new_state!')
         states.append(new_state)
+        n_states.append(new_state_n)
         #guarda e imprime estado da cadeia, resultado da atuação do agente
     
     return cost_history
@@ -121,9 +127,11 @@ def evaluate_results(timeseries):
 
 #test
 def main():
-
-    a = create_chain(2)
-    timeseries = simulate_chain(a, 360)
+    chain_size =8
+    timesteps = 60
+    a = create_chain(chain_size)
+    timeseries = simulate_chain(a, timesteps)
+    print("results")
     evaluate_results(timeseries)
 
 if __name__ == "__main__":

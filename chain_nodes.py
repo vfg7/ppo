@@ -19,7 +19,7 @@ class Chain_Node:
 
         self.logistic_cost = logistic_cost
         self.logistic_ratio = logistic_ratio
-        self.outs = []
+        self.outs = [0,0]
 
         # self.prod_avaliability = True #disponibilidade de produção. Caso o nó tenha demanda de produção maior que um timestep, 
         # #produção neste nó fica indisponível durante o tempo em que está produzindo 
@@ -183,10 +183,6 @@ class Chain_Node:
 
         return delivery
 
-    def count_me_stock(self):
-        for mats in self.on_stock:
-            self.current_stock = self.current_stock + mats.amount_on_node
-
 
     def update_state(self, supply_future = None, demand_one = None, 
                              id_one = None, demand_two = None, id_two = None):
@@ -194,17 +190,22 @@ class Chain_Node:
         #imaginando o timestep como um intervalo contínuo (tipo, um dia)
         #por padrão, toda produção começa no timestep e toda entrega começa no final do timestep 
         # (a ser entregue para o próximo nó no começo do timestep seguinte. Isto é, vira o supply do outro)
-        self.future_ins = self.produce(supply_future) #foi produzido neste timestep
+        self.future_ins = self.produce(supply_future) #foi produzido / recebido neste timestep
+        if demand_one:
+            delivery_hierarchy = self.hierarchy + 1
+            one = self.deliver(demand_one) #será entregue para o nó seguinte no próximo timestep
+            if id_one:
+                self.outs[id_one] = one
 
-        delivery_hierarchy = self.hierarchy + 1
-        one = self.deliver(demand_one) #será entregue para o nó seguinte no próximo timestep
-        outs_to_one = {'id': id_one, 'hierarchy':delivery_hierarchy,'amount':one}
-        two = self.deliver(demand_two) #será entregue para o nó seguinte no próximo timestep
-        outs_to_two = {'id': id_two, 'hierarchy':delivery_hierarchy,'amount':two}
-        self.outs= [outs_to_one, outs_to_two]
+        if demand_two:
+            delivery_hierarchy = self.hierarchy + 1
+            two = self.deliver(demand_two) #será entregue para o nó seguinte no próximo timestep
+            if id_two:
+                self.outs[id_two] = two
+       
         #tanto faz o quanto eu vou entregar, oq ue vou entregar é o que importa?
 
-        self.count_me_stock()
+        return self.outs
 
 
 
