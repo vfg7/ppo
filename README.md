@@ -17,11 +17,8 @@ Make sure you have the following prerequisites installed:
 
 Clone the repository and install dependencies:
 bash
-git clone https://github.com/your-username/supply-chain-optimization.git
-cd supply-chain-optimization
-pip install -r requirements.txt
-
-
+git clone https://github.com/vfg/ppo.git
+open on a python environment
 
 ### Usage
 Customize the supply chain parameters in supply_chain.py to match your specific scenario. Run the optimization process with:
